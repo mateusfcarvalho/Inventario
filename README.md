@@ -1,5 +1,4 @@
-# 
-Sistema de Controle de Inventário de Bens Corporativos
+# Sistema de Controle de Inventário de Bens Corporativos
 
 Este projeto é uma **aplicação web frontend** desenvolvida em HTML, CSS (com **Tailwind CSS**) e JavaScript puro, projetada para interagir com um **Google Apps Script Web App** como backend. Ele permite o **controle de inventário de bens corporativos**, como os da Fazenda Morro Alto, oferecendo funcionalidades para **adicionar novos itens** e **visualizar a lista completa de bens**, além de permitir o **download dos dados em formato CSV**.
 
