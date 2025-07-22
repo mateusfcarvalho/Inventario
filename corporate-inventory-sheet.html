@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Inventário de Bens Corporativos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Ensure table cells don't wrap excessively */
+        td, th {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6 sm:p-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 text-center">Controle de Inventário de Bens Corporativos</h1>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                <div class="flex items-center justify-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+                    <p class="text-lg font-semibold text-gray-800">Carregando dados...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Box for alerts -->
+        <div id="messageBox" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                <p id="messageBoxText" class="text-lg font-semibold text-gray-800 mb-4"></p>
+                <button class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition" onclick="document.getElementById('messageBox').classList.add('hidden')">OK</button>
+            </div>
+        </div>
+
+        <!-- Form to Add New Asset -->
+        <div class="mb-8 p-6 bg-gray-50 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Adicionar Novo Bem</h2>
+            <form id="assetForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                    <input type="text" id="category" name="category" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="itemName" class="block text-sm font-medium text-gray-700 mb-1">Item</label>
+                    <input type="text" id="itemName" name="itemName" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                    <textarea id="description" name="description" rows="1"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"></textarea>
+                </div>
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                    <input type="number" id="quantity" name="quantity" min="1" value="1" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="condition" class="block text-sm font-medium text-gray-700 mb-1">Estado de Conservação</label>
+                    <select id="condition" name="condition" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                        <option value="">Selecione</option>
+                        <option value="Novo">Novo</option>
+                        <option value="Excelente">Excelente</option>
+                        <option value="Bom">Bom</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Ruim">Ruim</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="usageCondition" class="block text-sm font-medium text-gray-700 mb-1">Condição de Uso</label>
+                    <select id="usageCondition" name="usageCondition"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                        <option value="">Selecione</option>
+                        <option value="Operacional">Operacional</option>
+                        <option value="Não Operacional">Não Operacional</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="supplier" class="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
+                    <input type="text" id="supplier" name="supplier"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="value" class="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+                    <input type="number" id="value" name="value" step="0.01" min="0" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="usefulLife" class="block text-sm font-medium text-gray-700 mb-1">Vida Útil (anos)</label>
+                    <input type="number" id="usefulLife" name="usefulLife" min="1" value="5" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="residualValue" class="block text-sm font-medium text-gray-700 mb-1">Valor Residual (R$)</label>
+                    <input type="number" id="residualValue" name="residualValue" step="0.01" min="0" value="0.00"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="acquisitionDate" class="block text-sm font-medium text-gray-700 mb-1">Data de Aquisição</label>
+                    <input type="date" id="acquisitionDate" name="acquisitionDate"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="assetId" class="block text-sm font-medium text-gray-700 mb-1">Número de Patrimônio</label>
+                    <input type="text" id="assetId" name="assetId"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status do Bem</label>
+                    <select id="status" name="status"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                        <option value="">Selecione</option>
+                        <option value="Em Uso">Em Uso</option>
+                        <option value="Em Manutenção">Em Manutenção</option>
+                        <option value="Desativado">Desativado</option>
+                        <option value="Descartado">Descartado</option>
+                        <option value="Em Estoque">Em Estoque</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="lastMaintenanceDate" class="block text-sm font-medium text-gray-700 mb-1">Data da Última Manutenção</label>
+                    <input type="date" id="lastMaintenanceDate" name="lastMaintenanceDate"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="nextMaintenanceDate" class="block text-sm font-medium text-gray-700 mb-1">Próxima Manutenção Prevista</label>
+                    <input type="date" id="nextMaintenanceDate" name="nextMaintenanceDate"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="costCenter" class="block text-sm font-medium text-gray-700 mb-1">Centro de Custo</label>
+                    <input type="text" id="costCenter" name="costCenter"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="invoiceNumber" class="block text-sm font-medium text-gray-700 mb-1">Número da Nota Fiscal</label>
+                    <input type="text" id="invoiceNumber" name="invoiceNumber"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="warrantyExpirationDate" class="block text-sm font-medium text-gray-700 mb-1">Garantia (Expiração)</label>
+                    <input type="date" id="warrantyExpirationDate" name="warrantyExpirationDate"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div>
+                    <label for="attachmentLink" class="block text-sm font-medium text-gray-700 mb-1">Link para Anexo (Doc/Foto)</label>
+                    <input type="url" id="attachmentLink" name="attachmentLink"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+                </div>
+                <div class="lg:col-span-3">
+                    <label for="movementHistory" class="block text-sm font-medium text-gray-700 mb-1">Histórico de Movimentação</label>
+                    <textarea id="movementHistory" name="movementHistory" rows="2"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"></textarea>
+                </div>
+                <div class="lg:col-span-3">
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                    <textarea id="notes" name="notes" rows="3"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"></textarea>
+                </div>
+                <div class="lg:col-span-3 flex justify-end">
+                    <button type="submit"
+                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                        Adicionar Bem
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="overflow-x-auto shadow-md rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Categoria</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado de Conservação</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condição de Uso</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fornecedor</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vida Útil (anos)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Residual (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depreciação Anual (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Aquisição</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número de Patrimônio</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status do Bem</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Manutenção</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Próxima Manutenção</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Centro de Custo</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número da NF</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Garantia (Expiração)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Anexo</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Histórico de Movimentação</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Observações</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Inventory items will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Download CSV Button -->
+        <div class="mt-8 flex justify-center">
+            <button id="downloadCsvBtn"
+                    class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                Baixar como CSV
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // !! IMPORTANTE: Substitua este URL pelo URL do seu Google Apps Script Web App implantado !!
+        // O erro "Load failed" geralmente ocorre ao executar o arquivo HTML localmente (file://)
+        // e tentar acessar um recurso HTTPS externo devido a restrições de segurança do navegador (CORS).
+        // Para que a comunicação funcione, você precisa hospedar este arquivo HTML em um servidor web.
+        // Exemplos: GitHub Pages, Firebase Hosting, ou um servidor local simples (ex: `python -m http.server`).
+        const APP_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwSzGjXpgDdvxvyL2JwPCct9tZKPD-eBu5fz2Y9O2YVS8NTtQSsU9pZxh9pJY_nAP47fA/exec';
+
+        // Array para armazenar os dados do inventário (cache local)
+        let inventory = [];
+
+        // Obter referências aos elementos DOM
+        const assetForm = document.getElementById('assetForm');
+        const inventoryTableBody = document.getElementById('inventoryTableBody');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxText = document.getElementById('messageBoxText');
+
+        /**
+         * Exibe uma mensagem em uma caixa de diálogo personalizada.
+         * @param {string} message A mensagem a ser exibida.
+         */
+        function showMessage(message) {
+            messageBoxText.textContent = message;
+            messageBox.classList.remove('hidden');
+        }
+
+        /**
+         * Renderiza os dados do inventário na tabela HTML.
+         */
+        function renderTable() {
+            // Limpa as linhas da tabela existentes
+            inventoryTableBody.innerHTML = '';
+
+            // Itera sobre o array de inventário e cria as linhas da tabela
+            inventory.forEach(asset => {
+                const row = inventoryTableBody.insertRow();
+                row.classList.add('hover:bg-gray-50'); // Adiciona efeito hover às linhas
+
+                // Insere células para cada propriedade do bem
+                row.insertCell().textContent = asset.category || '';
+                row.insertCell().textContent = asset.itemName || '';
+                row.insertCell().textContent = asset.description || '';
+                row.insertCell().textContent = asset.quantity || '';
+                row.insertCell().textContent = asset.condition || '';
+                row.insertCell().textContent = asset.usageCondition || '';
+                row.insertCell().textContent = asset.supplier || '';
+                // Garante que o valor seja um número antes de formatar
+                row.insertCell().textContent = (typeof asset.value === 'number' ? asset.value : parseFloat(asset.value || 0))
+                                               .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                row.insertCell().textContent = asset.usefulLife || '';
+                // Garante que o valor residual seja um número antes de formatar
+                row.insertCell().textContent = (typeof asset.residualValue === 'number' ? asset.residualValue : parseFloat(asset.residualValue || 0))
+                                               .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                // Garante que a depreciação anual seja um número antes de formatar
+                row.insertCell().textContent = (typeof asset.annualDepreciation === 'number' ? asset.annualDepreciation : parseFloat(asset.annualDepreciation || 0))
+                                               .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                row.insertCell().textContent = asset.acquisitionDate || '';
+                row.insertCell().textContent = asset.assetId || '';
+                row.insertCell().textContent = asset.status || '';
+                row.insertCell().textContent = asset.lastMaintenanceDate || '';
+                row.insertCell().textContent = asset.nextMaintenanceDate || '';
+                row.insertCell().textContent = asset.costCenter || '';
+                row.insertCell().textContent = asset.invoiceNumber || '';
+                row.insertCell().textContent = asset.warrantyExpirationDate || '';
+                // Para o link de anexo, cria um link clicável se disponível
+                const attachmentCell = row.insertCell();
+                if (asset.attachmentLink) {
+                    const link = document.createElement('a');
+                    link.href = asset.attachmentLink;
+                    link.textContent = 'Ver Anexo';
+                    link.target = '_blank'; // Abrir em nova aba
+                    link.classList.add('text-blue-600', 'hover:underline');
+                    attachmentCell.appendChild(link);
+                } else {
+                    attachmentCell.textContent = '';
+                }
+                row.insertCell().textContent = asset.movementHistory || '';
+                row.insertCell().textContent = asset.notes || '';
+
+                // Adiciona preenchimento a todas as células
+                Array.from(row.cells).forEach(cell => {
+                    cell.classList.add('px-6', 'py-4', 'whitespace-nowrap', 'text-sm', 'text-gray-900');
+                });
+            });
+        }
+
+        /**
+         * Carrega os dados do inventário do Google Apps Script Web App.
+         */
+        async function loadInventory() {
+            loadingIndicator.classList.remove('hidden');
+            try {
+                const response = await fetch(APP_SCRIPT_WEB_APP_URL);
+                if (!response.ok) {
+                    // Tenta ler o corpo da resposta para mais detalhes do erro, se disponível
+                    const errorText = await response.text();
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}. Detalhes: ${errorText}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                inventory = data; // Atualiza o array de inventário local
+                renderTable(); // Renderiza a tabela com os dados carregados
+            } catch (error) {
+                console.error('Erro ao carregar inventário:', error);
+                showMessage('Erro ao carregar dados do inventário. Por favor, verifique se o script do Google Apps Script está implantado corretamente com acesso "Qualquer pessoa" e se você está executando esta página em um servidor web (não diretamente do arquivo local). Detalhes no console do navegador.');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Lida com o envio do formulário para adicionar um novo bem ao Google Sheets.
+         * @param {Event} event - O evento de envio do formulário.
+         */
+        assetForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Previne o envio padrão do formulário
+
+            loadingIndicator.classList.remove('hidden');
+
+            // Obter valores dos campos do formulário
+            const itemValue = parseFloat(document.getElementById('value').value);
+            const itemUsefulLife = parseInt(document.getElementById('usefulLife').value);
+            const residualValue = parseFloat(document.getElementById('residualValue').value);
+
+            // Calcular depreciação anual (método linear: (Custo - Valor Residual) / Vida Útil)
+            const annualDepreciation = itemUsefulLife > 0 ? ((itemValue - residualValue) / itemUsefulLife).toFixed(2) : '0.00';
+
+            const newAsset = {
+                category: document.getElementById('category').value,
+                itemName: document.getElementById('itemName').value,
+                description: document.getElementById('description').value,
+                quantity: parseInt(document.getElementById('quantity').value),
+                condition: document.getElementById('condition').value,
+                usageCondition: document.getElementById('usageCondition').value,
+                supplier: document.getElementById('supplier').value,
+                value: itemValue.toFixed(2), // Garante 2 casas decimais para envio
+                usefulLife: itemUsefulLife,
+                residualValue: residualValue.toFixed(2),
+                annualDepreciation: annualDepreciation,
+                acquisitionDate: document.getElementById('acquisitionDate').value,
+                assetId: document.getElementById('assetId').value,
+                status: document.getElementById('status').value,
+                lastMaintenanceDate: document.getElementById('lastMaintenanceDate').value,
+                nextMaintenanceDate: document.getElementById('nextMaintenanceDate').value,
+                costCenter: document.getElementById('costCenter').value,
+                invoiceNumber: document.getElementById('invoiceNumber').value,
+                warrantyExpirationDate: document.getElementById('warrantyExpirationDate').value,
+                attachmentLink: document.getElementById('attachmentLink').value,
+                movementHistory: document.getElementById('movementHistory').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                const response = await fetch(APP_SCRIPT_WEB_APP_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newAsset)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}. Detalhes: ${errorText}`);
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('Bem adicionado com sucesso ao Google Sheets!');
+                    // Recarrega o inventário do Sheets para garantir que os dados locais estejam sincronizados
+                    await loadInventory();
+                    // Limpa os campos do formulário
+                    assetForm.reset();
+                    // Redefine os valores padrão para quantidade, vida útil e valor residual
+                    document.getElementById('quantity').value = 1;
+                    document.getElementById('usefulLife').value = 5;
+                    document.getElementById('residualValue').value = 0.00;
+                } else {
+                    throw new Error(result.message || 'Erro ao adicionar item.');
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar bem:', error);
+                showMessage(`Erro ao adicionar bem: ${error.message}. Por favor, verifique o console do navegador para mais detalhes.`);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        /**
+         * Converte os dados do inventário para o formato CSV e aciona o download.
+         * Isso agora usa o array 'inventory' carregado localmente.
+         */
+        downloadCsvBtn.addEventListener('click', () => {
+            if (inventory.length === 0) {
+                showMessage('A planilha está vazia!');
+                return;
+            }
+
+            // Define os cabeçalhos CSV
+            const headers = [
+                "Categoria", "Item", "Descrição", "Quantidade", "Estado de Conservação", "Condição de Uso",
+                "Fornecedor", "Valor (R$)", "Vida Útil (anos)", "Valor Residual (R$)", "Depreciação Anual (R$)",
+                "Data de Aquisição", "Número de Patrimônio", "Status do Bem", "Data da Última Manutenção",
+                "Próxima Manutenção Prevista", "Centro de Custo", "Número da Nota Fiscal",
+                "Garantia (Expiração)", "Link Anexo", "Histórico de Movimentação", "Observações"
+            ];
+
+            // Mapeia os dados do inventário para as linhas CSV
+            const rows = inventory.map(asset => [
+                `"${(asset.category || '').replace(/"/g, '""')}"`,
+                `"${(asset.itemName || '').replace(/"/g, '""')}"`,
+                `"${(asset.description || '').replace(/"/g, '""')}"`,
+                `"${(asset.quantity || '')}"`,
+                `"${(asset.condition || '').replace(/"/g, '""')}"`,
+                `"${(asset.usageCondition || '').replace(/"/g, '""')}"`,
+                `"${(asset.supplier || '').replace(/"/g, '""')}"`,
+                `"${(typeof asset.value === 'number' ? asset.value : parseFloat(asset.value || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/"/g, '""')}"`,
+                `"${(asset.usefulLife || '')}"`,
+                `"${(typeof asset.residualValue === 'number' ? asset.residualValue : parseFloat(asset.residualValue || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/"/g, '""')}"`,
+                `"${(typeof asset.annualDepreciation === 'number' ? asset.annualDepreciation : parseFloat(asset.annualDepreciation || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/"/g, '""')}"`,
+                `"${(asset.acquisitionDate || '').replace(/"/g, '""')}"`,
+                `"${(asset.assetId || '').replace(/"/g, '""')}"`,
+                `"${(asset.status || '').replace(/"/g, '""')}"`,
+                `"${(asset.lastMaintenanceDate || '').replace(/"/g, '""')}"`,
+                `"${(asset.nextMaintenanceDate || '').replace(/"/g, '""')}"`,
+                `"${(asset.costCenter || '').replace(/"/g, '""')}"`,
+                `"${(asset.invoiceNumber || '').replace(/"/g, '""')}"`,
+                `"${(asset.warrantyExpirationDate || '').replace(/"/g, '""')}"`,
+                `"${(asset.attachmentLink || '').replace(/"/g, '""')}"`,
+                `"${(asset.movementHistory || '').replace(/"/g, '""')}"`,
+                `"${(asset.notes || '').replace(/"/g, '""')}"`
+            ].join(','));
+
+            // Combina cabeçalhos e linhas
+            const csvContent = [headers.join(','), ...rows].join('\n');
+
+            // Cria um Blob a partir do conteúdo CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            // Cria um URL temporário para o Blob
+            const url = URL.createObjectURL(blob);
+
+            // Cria um elemento âncora temporário e aciona o download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'inventario_bens_corporativos.csv';
+            document.body.appendChild(a); // Adiciona ao corpo para torná-lo clicável em todos os navegadores
+            a.click(); // Clica programaticamente no link
+            document.body.removeChild(a); // Limpa o elemento temporário
+            URL.revokeObjectURL(url); // Revoga o URL do objeto para liberar memória
+        });
+
+        // Carrega os dados do inventário quando a página é carregada
+        window.addEventListener('load', loadInventory);
+    </script>
+</body>
+</html>
